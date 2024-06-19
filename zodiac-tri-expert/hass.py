@@ -113,6 +113,18 @@ class ZodiacHomeAssistant:
         s_ph_setpoint_settings      = Settings(mqtt = self.mqtt_settings, entity = s_ph_setpoint_info)
         self.s_ph_setpoint          = Sensor(s_ph_setpoint_settings)
 
+        s_ph_current_info           = SensorInfo(name = "Current pH", min = 0, max = 14, device_class = "ph", unique_id = self.ZODIAC_HASS_ID + "_ph_current", device = device_info)
+        s_ph_current_settings       = Settings(mqtt = self.mqtt_settings, entity = s_ph_current_info)
+        self.s_ph_current           = Sensor(s_ph_current_settings)
+
+        s_acl_setpoint_info         = SensorInfo(name = "ACL setpoint", min = 600, max = 800, unique_id = self.ZODIAC_HASS_ID + "_acl_setpoint", device = device_info)
+        s_acl_setpoint_settings     = Settings(mqtt = self.mqtt_settings, entity = s_acl_setpoint_info)
+        self.acl_setpoint           = Sensor(s_acl_setpoint_settings)
+
+        s_acl_current_info          = SensorInfo(name = "Current ACL", min = 0, max = 1000, unique_id = self.ZODIAC_HASS_ID + "_acl_current", device = device_info)
+        s_acl_current_settings      = Settings(mqtt = self.mqtt_settings, entity = s_acl_current_info)
+        self.s_acl_current          = Sensor(s_acl_current_settings)
+
         _LOGGER.info(f"Setup done!")
 
     def loop(self):
@@ -127,6 +139,9 @@ class ZodiacHomeAssistant:
             
             self.s_connection_state.on()
             self.s_ph_setpoint.set_state(status.ph_setpoint)
+            self.s_ph_current.set_state(status.ph_current)
+            self.acl_setpoint.set_state(status.acl_setpoint)
+            self.s_acl_current.set_state(status.acl_current)
             sleep(10)
         
             
