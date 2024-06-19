@@ -10,16 +10,13 @@ from .aqualink_protocol import *
 _LOGGER = logging.getLogger(__name__)
 
 class Aqualink:
-    
-    PACKET_FOOTER        = bytes([0x10, 0x03])
-
     def __init__(self, device_path : Path):
         self.device = serial.Serial(device_path,
             baudrate = 9600,
             bytesize = serial.EIGHTBITS,
             parity   = serial.PARITY_NONE, 
             stopbits = serial.STOPBITS_ONE,
-            timeout  = 5
+            timeout  = 2
         )
 
         self.device.reset_output_buffer()
@@ -84,20 +81,10 @@ class Aqualink:
             sleep(5)
 
             try:
-                response = self.send_command(IdCommand())
-                assert isinstance(response, IdResponse), "ID reponse incorrect type!"
+                response = self.send_command(SetOutputCommand(1010))
+                assert isinstance(response, SetOutputResponse), "Set output reponse incorrect type!"
             except (ResponseMalformedException, TimeoutError):
-                _LOGGER.error("Error sending ID command!")
+                _LOGGER.error("Error sending output command!")
 
             # Wait a moment before sending another command.
             sleep(5)
-        
-        # while(True):
-        #     self.sendrecv(self.build_cmd(bytes([0x00])))
-        #     sleep(5)
-        #     self.sendrecv(self.build_cmd(bytes([0x14, 0x01])))
-        #     sleep(5)
-
-        # self.device.write(bytes([0x10, 0x02, 0x50, 0x00, 0x62, 0x10, 0x03]))
-        # data = self.device.read(1)
-        # print(data)
