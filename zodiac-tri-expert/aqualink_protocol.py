@@ -49,6 +49,20 @@ class IdResponse(AqualinkResponse):
         self.id = self.payload.decode('ascii')
         _LOGGER.debug(f"Decoded ID: {self.id}")
 
+class SetOutputResponse(AqualinkResponse):
+    def __init__(self, raw_data : bytes):
+        super().__init__(raw_data)
+        if len(raw_data) < 15:
+            raise ResponseMalformedException
+        
+        self.ph_setpoint  = float(raw_data[8]) / 10
+        self.acl_setpoint = raw_data[9] * 10
+        self.ph_current   = float(raw_data[10]) / 10
+        self.acl_current  = raw_data[11] * 10
+
+        _LOGGER.debug(f"pH setpoint/current: {self.ph_setpoint}/{self.ph_current}")
+        _LOGGER.debug(f"acl setpoint/current: {self.acl_setpoint}/{self.acl_current}")
+
 ######################################################################
 # Commands
 ######################################################################
@@ -84,4 +98,13 @@ class IdCommand(AqualinkCommand):
 
     def process_response(self, raw_data : bytes) -> "IdResponse":
         return IdResponse(raw_data)
+    
+class SetOutputCommand(AqualinkCommand):
+    def __init__(self, output_percent : int):
+        assert 0 <= output_percent <= 101, "Output percent not in range!" # 101 for Boost mode.
+        output_bytes = output_percent.to_bytes(1, 'little')
+        super().__init__(bytes([0x11]) + output_bytes)
+
+    def process_response(self, raw_data : bytes) -> "SetOutputResponse":
+        return SetOutputResponse(raw_data)
 
