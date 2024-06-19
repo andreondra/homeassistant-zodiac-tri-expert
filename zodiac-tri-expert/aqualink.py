@@ -105,6 +105,7 @@ class Aqualink:
             assert isinstance(response, SetOutputResponse), "Set output reponse incorrect type!"
         except (ResponseMalformedException, TimeoutError):
             _LOGGER.error("Error sending output command!")
+            raise NoResponseException
 
         return self.OperationalStatus(
             response.ph_setpoint,

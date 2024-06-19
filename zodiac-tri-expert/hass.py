@@ -65,6 +65,7 @@ class ZodiacHomeAssistant:
         ######################################################################
         # Opening device communication
         ######################################################################
+        _LOGGER.info(f"Connecting to Zodiac...")
         self.aqualink = Aqualink(serial_port)
         connection_attempts = 0
         connected = False
@@ -72,6 +73,10 @@ class ZodiacHomeAssistant:
         while not connected:
             try:
                 self.aqualink.probe()
+                sleep(WAIT_BETWEEN_COMMANDS)
+                _LOGGER.info(f"Getting Zodiac ID...")
+                zodiac_id = self.aqualink.get_id()
+                sleep(WAIT_BETWEEN_COMMANDS)
             except NoResponseException:
                 connection_attempts += 1
                 _LOGGER.warning(f"No response from Zodiac, attempt {connection_attempts}/{MAX_CONNECTION_ATTEMPTS}!")
@@ -84,9 +89,6 @@ class ZodiacHomeAssistant:
                     continue
             
             connected = True
-        
-        sleep(WAIT_BETWEEN_COMMANDS)
-        zodiac_id = self.aqualink.get_id()
 
         ######################################################################
         # Build sensors
@@ -104,20 +106,28 @@ class ZodiacHomeAssistant:
 
         s_connection_state_info     = BinarySensorInfo(name="Connection state", device_class="connectivity", unique_id=self.ZODIAC_HASS_ID + "_connected", device=device_info)
         s_connection_state_settings = Settings(mqtt=self.mqtt_settings, entity=s_connection_state_info)
-        s_connection_state          = BinarySensor(s_connection_state_settings)
-        s_connection_state.update_state(False)
+        self.s_connection_state     = BinarySensor(s_connection_state_settings)
+        self.s_connection_state.on()
 
         s_ph_setpoint_info          = SensorInfo(name = "pH setpoint", min = 6.8, max = 7.6, device_class = "ph", unique_id = self.ZODIAC_HASS_ID + "_ph_setpoint", device = device_info)
         s_ph_setpoint_settings      = Settings(mqtt = self.mqtt_settings, entity = s_ph_setpoint_info)
-        s_ph_setpoint               = Sensor(s_ph_setpoint_settings)
-        # s_ph_setpoint.set_state(7.0)
+        self.s_ph_setpoint          = Sensor(s_ph_setpoint_settings)
 
-    def loop():
+        _LOGGER.info(f"Setup done!")
+
+    def loop(self):
         while True:
             try:
-                response = self.send_command(ProbeCommand())
-                assert isinstance(response, ProbeResponse), "Probe reponse incorrect type!"
-            except (ResponseMalformedException, TimeoutError):
-                _LOGGER.error("Error sending probe, retrying!")
-                sleep(5)
+                status = self.aqualink.set_output_get_info(70)
+            except NoResponseException:
+                _LOGGER.warning("No response from Zodiac!")
+                self.s_connection_state.off()
+                sleep(WAIT_BETWEEN_COMMANDS)
                 continue
+            
+            self.s_connection_state.on()
+            self.s_ph_setpoint.set_state(status.ph_setpoint)
+            sleep(10)
+        
+            
+
