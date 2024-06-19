@@ -46,8 +46,9 @@ class ProbeResponse(AqualinkResponse):
 class IdResponse(AqualinkResponse):
     def __init__(self, raw_data : bytes):
         super().__init__(raw_data)
-        self.id = self.payload.decode('ascii')
-        _LOGGER.debug(f"Decoded ID: {self.id}")
+        raw_string = self.payload[1:].decode('ascii')
+        self.id = ''.join(c for c in raw_string if c.isprintable())
+        _LOGGER.debug(f"Decoded ID: '{self.id}'")
 
 class SetOutputResponse(AqualinkResponse):
     def __init__(self, raw_data : bytes):
