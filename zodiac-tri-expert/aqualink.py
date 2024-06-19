@@ -10,6 +10,9 @@ from .aqualink_protocol import *
 _LOGGER = logging.getLogger(__name__)
 
 class Aqualink:
+
+    PACKET_FOOTER        = bytes([0x10, 0x03])
+
     def __init__(self, device_path : Path):
         self.device = serial.Serial(device_path,
             baudrate = 9600,
@@ -63,28 +66,34 @@ class Aqualink:
         raw_response = self.sendrecv(command.to_bytes())
         return command.process_response(raw_response)
 
-    def loop(self):
+    # Try to probe the device.
+    # Raises NoResponseException if timed out or response was malformed.
+    def probe(self):
+        try:
+            response = self.send_command(ProbeCommand())
+            assert isinstance(response, ProbeResponse), "Probe reponse incorrect type!"
+        except (ResponseMalformedException, TimeoutError):
+            _LOGGER.error("Error sending probe!")
+            raise NoResponseException
 
-        success_probe = True
-        while True:
-            try:
-                response = self.send_command(ProbeCommand())
-                assert isinstance(response, ProbeResponse), "Probe reponse incorrect type!"
-            except (ResponseMalformedException, TimeoutError):
-                _LOGGER.error("Error sending probe, retrying!")
-                success_probe = False
+    # Try to get ID of the device.
+    # Raises NoResponseException if timed out or response was malformed.
+    def get_id(self) -> str:
+        try:
+            response = self.send_command(IdCommand())
+            assert isinstance(response, IdResponse), "Get ID reponse incorrect type!"
+        except (ResponseMalformedException, TimeoutError):
+            _LOGGER.error("Error sending get ID!")
+            raise NoResponseException
+        return response.id
 
-            if not success_probe:
-                sleep(5)
-                continue
-            
-            sleep(5)
-
-            try:
-                response = self.send_command(SetOutputCommand(1010))
-                assert isinstance(response, SetOutputResponse), "Set output reponse incorrect type!"
-            except (ResponseMalformedException, TimeoutError):
-                _LOGGER.error("Error sending output command!")
-
-            # Wait a moment before sending another command.
-            sleep(5)
+    # Try to set chlorinator output power % and receive operational information.
+    # Output power has to be in range [0, 101] (101 for boost).
+    # Raises NoResponseException if timed out or response was malformed.
+    def set_output_get_info(self, output_power : int):
+        assert 0 <= output_power <= 101, "Output power out of range!"
+        try:
+            response = self.send_command(SetOutputCommand(output_power))
+            assert isinstance(response, SetOutputResponse), "Set output reponse incorrect type!"
+        except (ResponseMalformedException, TimeoutError):
+            _LOGGER.error("Error sending output command!")
