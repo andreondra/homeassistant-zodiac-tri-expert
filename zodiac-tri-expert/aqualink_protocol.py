@@ -5,6 +5,9 @@ from .exceptions import *
 
 _LOGGER = logging.getLogger(__name__)
 
+######################################################################
+# Generic (command/response) packet
+######################################################################
 class AqualinkPacket:
     PACKET_HEADER        = bytes([0x10, 0x02])
     PACKET_DEST_AQUALINK = bytes([0xB0])
@@ -13,6 +16,10 @@ class AqualinkPacket:
     # Checksum is calculated as sum of all previous bytes mod 256.
     def _checksum(self, data : bytes) -> bytes:
         return (sum(data) % 256).to_bytes(1, 'little')
+
+######################################################################
+# Responses
+######################################################################
 
 class AqualinkResponse(AqualinkPacket):
     def __init__(self, raw_data : bytes):
@@ -31,6 +38,20 @@ class AqualinkResponse(AqualinkPacket):
             raise ResponseMalformedException()
         
         self.payload = raw_data[2:-3]
+
+class ProbeResponse(AqualinkResponse):
+    def __init__(self, raw_data : bytes):
+        super().__init__(raw_data)
+
+class IdResponse(AqualinkResponse):
+    def __init__(self, raw_data : bytes):
+        super().__init__(raw_data)
+        self.id = self.payload.decode('ascii')
+        _LOGGER.debug(f"Decoded ID: {self.id}")
+
+######################################################################
+# Commands
+######################################################################
 
 class AqualinkCommand(AqualinkPacket):
     def __init__(self, payload : bytes):
@@ -63,15 +84,4 @@ class IdCommand(AqualinkCommand):
 
     def process_response(self, raw_data : bytes) -> "IdResponse":
         return IdResponse(raw_data)
-
-class ProbeResponse(AqualinkResponse):
-    def __init__(self, raw_data : bytes):
-        super().__init__(raw_data)
-
-class IdResponse(AqualinkResponse):
-    def __init__(self, raw_data : bytes):
-        super().__init__(raw_data)
-        self.id = self.payload.decode('ascii')
-        _LOGGER.debug(f"Decoded ID: {self.id}")
-
 
