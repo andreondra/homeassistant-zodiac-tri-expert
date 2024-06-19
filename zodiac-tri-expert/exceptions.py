@@ -1,0 +1,2 @@
+class ResponseMalformedException(BaseException):
+    pass
