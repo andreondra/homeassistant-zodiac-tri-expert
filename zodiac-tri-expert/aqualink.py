@@ -3,6 +3,7 @@ import logging
 from pathlib import Path
 from time import sleep
 import serial.rs485
+from dataclasses import dataclass
 
 from .constants         import *
 from .aqualink_protocol import *
@@ -12,6 +13,13 @@ _LOGGER = logging.getLogger(__name__)
 class Aqualink:
 
     PACKET_FOOTER        = bytes([0x10, 0x03])
+
+    @dataclass
+    class OperationalStatus:
+        ph_setpoint  : float
+        ph_current   : float
+        acl_setpoint : int
+        acl_current  : int
 
     def __init__(self, device_path : Path):
         self.device = serial.Serial(device_path,
@@ -90,10 +98,17 @@ class Aqualink:
     # Try to set chlorinator output power % and receive operational information.
     # Output power has to be in range [0, 101] (101 for boost).
     # Raises NoResponseException if timed out or response was malformed.
-    def set_output_get_info(self, output_power : int):
+    def set_output_get_info(self, output_power : int) -> OperationalStatus:
         assert 0 <= output_power <= 101, "Output power out of range!"
         try:
             response = self.send_command(SetOutputCommand(output_power))
             assert isinstance(response, SetOutputResponse), "Set output reponse incorrect type!"
         except (ResponseMalformedException, TimeoutError):
             _LOGGER.error("Error sending output command!")
+
+        return self.OperationalStatus(
+            response.ph_setpoint,
+            response.ph_current,
+            response.acl_setpoint,
+            response.acl_current
+        )
