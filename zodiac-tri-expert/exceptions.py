@@ -6,3 +6,6 @@ class ConfigFileMalformed(BaseException):
 
 class NoResponseException(BaseException):
     pass
+
+class CantConnectToZodiac(BaseException):
+    pass
