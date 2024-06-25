@@ -1,16 +1,21 @@
 import logging
 import sys
 
-from .aqualink import Aqualink
-from .hass     import ZodiacHomeAssistant
+from .aqualink   import Aqualink
+from .hass       import ZodiacHomeAssistant
+from .exceptions import *
 
 _LOGGER = logging.getLogger(__name__)
 
 if __name__ == '__main__':
-    logging.basicConfig(level=logging.INFO)
+    logging.basicConfig(level=logging.DEBUG)
 
     print("Setting up Home Assistant integration!")
-    ha = ZodiacHomeAssistant()
+    try:
+        ha = ZodiacHomeAssistant()
+    except CantConnectToZodiac:
+        print("Can't connect to the Zodiac!")
+        sys.exit(1)
     print("All set up!")
     try:
         ha.loop()
