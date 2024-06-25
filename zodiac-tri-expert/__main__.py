@@ -9,7 +9,7 @@ from .exceptions import *
 _LOGGER       = logging.getLogger(__name__)
 
 if __name__ == '__main__':
-    logging.basicConfig(level=logging.DEBUG)
+    # logging.basicConfig(level=logging.DEBUG)
 
     print("Setting up Home Assistant integration!")
     try:
