@@ -12,6 +12,7 @@ class AqualinkPacket:
     PACKET_HEADER        = bytes([0x10, 0x02])
     PACKET_DEST_AQUALINK = bytes([0xB0])
     PACKET_FOOTER        = bytes([0x10, 0x03])
+    MAX_PACKET_LEN       = 40 # A little headroom for possible longer IDs.
 
     # Checksum is calculated as sum of all previous bytes mod 256.
     def _checksum(self, data : bytes) -> bytes:
