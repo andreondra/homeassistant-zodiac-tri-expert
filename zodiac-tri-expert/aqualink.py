@@ -7,6 +7,7 @@ from dataclasses import dataclass
 
 from .constants         import *
 from .aqualink_protocol import *
+from .exceptions        import *
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -52,8 +53,10 @@ class Aqualink:
         if not no_recv:
             _LOGGER.debug(f"Waiting for response...")
 
+            header_received = False
             timeout_count = 0
-            while len(received_data) < 2 or received_data[-2:] != self.PACKET_FOOTER:
+            invalid_recv  = 0
+            while len(received_data) < 2 or received_data[-2:] != AqualinkPacket.PACKET_FOOTER:
                 received_byte  = self.device.read(1)
                 if len(received_byte) < 1:
                     _LOGGER.warning(f"Timeout waiting for response byte!")
@@ -62,9 +65,24 @@ class Aqualink:
                     if timeout_count == TIMEOUT_LIMIT:
                         _LOGGER.error("Communication timed out!")
                         raise TimeoutError()
+                # This is to sync with packet start.
+                elif not header_received:
+                    _LOGGER.debug(f"Received byte: {received_byte.hex()}")
+                    if received_byte == 0x10.to_bytes():
+                        header_received = True
+                        received_data += received_byte
+                    else:
+                        invalid_recv += 1
                 else:
                     _LOGGER.debug(f"Received byte: {received_byte.hex()}")
                     received_data += received_byte
+
+                if len(received_data) > AqualinkPacket.MAX_PACKET_LEN:
+                    raise ResponseMalformedException()
+                if invalid_recv > 20: # Twenty leading zeroes should be enough.
+                    _LOGGER.debug("Too many invalid bytes!")
+                    raise ResponseMalformedException()
+
             _LOGGER.debug(f"All data received!")
             _LOGGER.debug(f"Received data: {received_data.hex()}")
         
