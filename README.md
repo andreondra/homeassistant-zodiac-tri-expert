@@ -27,6 +27,10 @@ Requires at least Python 3.11 and these packages (available from pip):
 - pyaml
 - ha-mqtt-discoverable
 
+## Contributions
+Some stuff is not yet implemeted (terminal interface, error code detection...). If you want to contribute,
+just open a PR. Thanks 😀.
+
 ## Acknowledgements
 I would like to thank guys around the AquapureD project, the project itself and discussions around it
 helped me a lot to gain information about the protocol, connections and more. Also I would like
