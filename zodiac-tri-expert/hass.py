@@ -97,7 +97,7 @@ class ZodiacHomeAssistant:
                 sleep(WAIT_BETWEEN_COMMANDS)
             except NoResponseException:
                 connection_attempts += 1
-                _LOGGER.warning(f"No response from Zodiac, attempt {connection_attempts}/{max_conn_attempts if max_conn_attempts != 0 else "unlimited"}!")
+                _LOGGER.warning(f"No response from Zodiac, attempt {connection_attempts}/{max_conn_attempts if max_conn_attempts != 0 else 'unlimited'}!")
 
                 if max_conn_attempts != 0 and connection_attempts == max_conn_attempts:
                     _LOGGER.error(f"Can't connect to Zodiac after {connection_attempts} tries!")
