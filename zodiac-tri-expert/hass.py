@@ -56,6 +56,18 @@ class ZodiacHomeAssistant:
             # Set to unlimited.
             max_conn_attempts = 0
 
+        try:
+            self.refresh_interval = int(config["mqtt"]["refresh_interval"])
+        except KeyError:
+            self.refresh_interval = 10
+        except TypeError:
+            _LOGGER.error("Refresh interval should be integer >= 10!")
+            raise ConfigFileMalformed()
+
+        if self.refresh_interval < 10:
+            _LOGGER.error("Refresh interval should be integer >= 10!")
+            raise ConfigFileMalformed()
+
         ######################################################################
         # Connect to MQTT broker
         ######################################################################
@@ -134,21 +146,29 @@ class ZodiacHomeAssistant:
         _LOGGER.info(f"Setup done!")
 
     def loop(self):
+
+        current_fails = 0
+
         while True:
             try:
                 status = self.aqualink.set_output_get_info(70)
             except NoResponseException:
-                _LOGGER.warning("No response from Zodiac!")
-                self.s_connection_state.off()
+                current_fails += 1
+                _LOGGER.warning("No response from Zodiac! Currently {current_fails} fails.")
+                
+                if current_fails > CONN_DEAD_THRESH:
+                    self.s_connection_state.off()
+
                 sleep(WAIT_BETWEEN_COMMANDS)
                 continue
             
+            current_fails = 0
             self.s_connection_state.on()
             self.s_ph_setpoint.set_state(status.ph_setpoint)
             self.s_ph_current.set_state(status.ph_current)
             self.acl_setpoint.set_state(status.acl_setpoint)
             self.s_acl_current.set_state(status.acl_current)
-            sleep(10)
+            sleep(self.refresh_interval)
         
             
 
