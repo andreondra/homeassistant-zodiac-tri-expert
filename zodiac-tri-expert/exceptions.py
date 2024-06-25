@@ -9,3 +9,6 @@ class NoResponseException(BaseException):
 
 class CantConnectToZodiac(BaseException):
     pass
+
+class FatalError(BaseException):
+    pass

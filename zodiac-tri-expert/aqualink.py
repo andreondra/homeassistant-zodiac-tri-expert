@@ -40,13 +40,20 @@ class Aqualink:
 
     # Sends a packet and receives data until a '0x10 0x03' sequence is received,
     # or skips recv phase if no_recv is true.
-    # Raises TimeoutError on timeout.
+    # Raises TimeoutError on timeout, ResponseMalformedException on bad response,
+    # IOError on other IO problems.
     def sendrecv(self, data : bytes, no_recv = False):
-        self.device.reset_output_buffer()
-        self.device.reset_input_buffer()
-    
-        self.device.write(data)
-        self.device.flush()
+
+        try:
+            self.device.reset_output_buffer()
+            self.device.reset_input_buffer()
+        
+            self.device.write(data)
+            self.device.flush()
+        except IOError:
+            _LOGGER.error("There was an IO error when writing to device!")
+            raise IOError()
+        
         _LOGGER.debug(f"Sent data: {data.hex()}")
 
         received_data = bytearray()
@@ -57,7 +64,12 @@ class Aqualink:
             timeout_count = 0
             invalid_recv  = 0
             while len(received_data) < 2 or received_data[-2:] != AqualinkPacket.PACKET_FOOTER:
-                received_byte  = self.device.read(1)
+                try:
+                    received_byte  = self.device.read(1)
+                except IOError:
+                    _LOGGER.error("There was an IOError when reading a response!")
+                    raise IOError()
+                
                 if len(received_byte) < 1:
                     _LOGGER.warning(f"Timeout waiting for response byte!")
                     timeout_count += 1
@@ -101,6 +113,15 @@ class Aqualink:
         except (ResponseMalformedException, TimeoutError):
             _LOGGER.error("Error sending probe!")
             raise NoResponseException
+        except IOError:
+            _LOGGER.info("Recovering from IOError....")
+            try:
+                if not self.device.is_open:
+                    self.device.open()
+            except IOError:
+                _LOGGER.error("Unable to reconnect!")
+                raise FatalError()
+            _LOGGER.info("OK!")
 
     # Try to get ID of the device.
     # Raises NoResponseException if timed out or response was malformed.
@@ -111,6 +132,15 @@ class Aqualink:
         except (ResponseMalformedException, TimeoutError):
             _LOGGER.error("Error sending get ID!")
             raise NoResponseException
+        except IOError:
+            _LOGGER.info("Recovering from IOError....")
+            try:
+                if not self.device.is_open:
+                    self.device.open()
+            except IOError:
+                _LOGGER.error("Unable to reconnect!")
+                raise FatalError()
+            _LOGGER.info("OK!")
         return response.id
 
     # Try to set chlorinator output power % and receive operational information.
@@ -124,7 +154,16 @@ class Aqualink:
         except (ResponseMalformedException, TimeoutError):
             _LOGGER.error("Error sending output command!")
             raise NoResponseException
-
+        except IOError:
+            _LOGGER.info("Recovering from IOError....")
+            try:
+                if not self.device.is_open:
+                    self.device.open()
+            except IOError:
+                _LOGGER.error("Unable to reconnect!")
+                raise FatalError()
+            _LOGGER.info("OK!")
+            
         return self.OperationalStatus(
             response.ph_setpoint,
             response.ph_current,

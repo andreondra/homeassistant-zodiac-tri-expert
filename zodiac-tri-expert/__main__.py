@@ -22,3 +22,6 @@ if __name__ == '__main__':
     except KeyboardInterrupt:
         print("Interrupted, exiting!")
         sys.exit(130)
+    except FatalError:
+        print("Fatal error, terminating!")
+        sys.exit(1)
