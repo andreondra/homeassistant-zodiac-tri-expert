@@ -1,4 +1,4 @@
-# Zodiac Tri Expert control
+# Zodiac Tri Expert for Home Assistant
 This repository contains Python module for integrating Zodiac Tri Expert SWGs to the Home Assistant via MQTT.
 
 ## Usage
