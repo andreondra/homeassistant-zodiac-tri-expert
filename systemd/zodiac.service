@@ -1,0 +1,14 @@
+[Unit]
+Description=This unit will start Zodiac MQTT integration
+After=network.target
+Wants=network-online.target
+
+[Service]
+Restart=always
+Type=simple
+ExecStart=/home/user/homeassistant-zodiac-tri-expert/venv/bin/python -m zodiac-tri-expert
+WorkingDirectory=/home/user/homeassistant-zodiac-tri-expert
+Environment=
+
+[Install]
+WantedBy=multi-user.target
