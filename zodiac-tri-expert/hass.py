@@ -1,5 +1,7 @@
 from ha_mqtt_discoverable import Settings, DeviceInfo
-from ha_mqtt_discoverable.sensors import BinarySensor, BinarySensorInfo, Sensor, SensorInfo
+from ha_mqtt_discoverable.sensors import BinarySensor, BinarySensorInfo, Sensor, SensorInfo, Number, NumberInfo
+from paho.mqtt.client import Client, MQTTMessage
+
 import yaml
 from pathlib import Path
 import logging
@@ -14,6 +16,14 @@ _LOGGER = logging.getLogger(__name__)
 class ZodiacHomeAssistant:
 
     ZODIAC_HASS_ID = "zodiac_tri_expert_chlorinator"
+
+    # To receive number updates from HA, define a callback function:
+    def power_callback(self, client: Client, message: MQTTMessage):
+        power = int(message.payload.decode())
+        self.current_output_power = power
+        _LOGGER.debug(f"Received output power = {power} % from HA.")
+        # Send an MQTT message to confirm to HA that the number was changed
+        self.n_output_power.set_value(power)
 
     def __init__(self, config_file_path : Path = "config.yaml"):
         
@@ -67,6 +77,20 @@ class ZodiacHomeAssistant:
         if self.refresh_interval < 10:
             _LOGGER.error("Refresh interval should be integer >= 10!")
             raise ConfigFileMalformed()
+        
+        try:
+            default_output_power = int(config["zodiac"]["default_power"])
+        except KeyError:
+            default_output_power = 70
+        except TypeError:
+            _LOGGER.error("Default output power should be integer in [0, 101]")
+            raise ConfigFileMalformed()
+    
+        if default_output_power < 0 or default_output_power > 101:
+            _LOGGER.error("Default output power should be integer in [0, 101]")
+            raise ConfigFileMalformed()
+
+        self.current_output_power = default_output_power
 
         ######################################################################
         # Connect to MQTT broker
@@ -143,6 +167,11 @@ class ZodiacHomeAssistant:
         s_acl_current_settings      = Settings(mqtt = self.mqtt_settings, entity = s_acl_current_info)
         self.s_acl_current          = Sensor(s_acl_current_settings)
 
+        n_output_power_info         = NumberInfo(name = "Output power", min = 0, max = 101, mode = "slider", step = 1, unique_id = self.ZODIAC_HASS_ID + "_output_power", device = device_info)
+        n_output_power_settings     = Settings(mqtt = self.mqtt_settings, entity = n_output_power_info)
+        self.n_output_power         = Number(n_output_power_settings, lambda c, u, m: self.power_callback(c, m))
+        self.n_output_power.set_value(self.current_output_power)
+
         _LOGGER.info(f"Setup done!")
 
     def loop(self):
@@ -151,7 +180,7 @@ class ZodiacHomeAssistant:
 
         while True:
             try:
-                status = self.aqualink.set_output_get_info(70)
+                status = self.aqualink.set_output_get_info(self.current_output_power)
             except NoResponseException:
                 current_fails += 1
                 _LOGGER.warning("No response from Zodiac! Currently {current_fails} fails.")
