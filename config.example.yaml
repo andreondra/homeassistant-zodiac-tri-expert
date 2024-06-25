@@ -1,0 +1,11 @@
+mqtt:
+  host: <IP of MQTT server>
+  port: <optional, MQTT port>
+  user: <optional, MQTT username>
+  password: <optional, MQTT password>
+  refresh_interval: <optional, interval of synchronization with MQTT server, should be >= 10 >
+
+zodiac:
+  serial_port: <path to the serial port where SWG is connected>
+  max_connection_attempts: <optional, max connection attempts, set to 0 or delete for unlimited>
+  default_power: <optional, output power to set on script start>
