@@ -81,7 +81,7 @@ class ZodiacHomeAssistant:
                 connection_attempts += 1
                 _LOGGER.warning(f"No response from Zodiac, attempt {connection_attempts}/{MAX_CONNECTION_ATTEMPTS}!")
 
-                if connection_attempts == MAX_CONNECTION_ATTEMPTS:
+                if MAX_CONNECTION_ATTEMPTS != 0 and connection_attempts == MAX_CONNECTION_ATTEMPTS:
                     _LOGGER.error(f"Can't connect to Zodiac after {connection_attempts} tries!")
                     raise CantConnectToZodiac()
                 else:
@@ -109,19 +109,19 @@ class ZodiacHomeAssistant:
         self.s_connection_state     = BinarySensor(s_connection_state_settings)
         self.s_connection_state.on()
 
-        s_ph_setpoint_info          = SensorInfo(name = "pH setpoint", min = 6.8, max = 7.6, device_class = "ph", unique_id = self.ZODIAC_HASS_ID + "_ph_setpoint", device = device_info)
+        s_ph_setpoint_info          = SensorInfo(name = "pH setpoint", min = 6.8, max = 7.6, state_class = "measurement", device_class = "ph", unique_id = self.ZODIAC_HASS_ID + "_ph_setpoint", device = device_info)
         s_ph_setpoint_settings      = Settings(mqtt = self.mqtt_settings, entity = s_ph_setpoint_info)
         self.s_ph_setpoint          = Sensor(s_ph_setpoint_settings)
 
-        s_ph_current_info           = SensorInfo(name = "Current pH", min = 0, max = 14, device_class = "ph", unique_id = self.ZODIAC_HASS_ID + "_ph_current", device = device_info)
+        s_ph_current_info           = SensorInfo(name = "Current pH", min = 0, max = 14, state_class = "measurement", device_class = "ph", unique_id = self.ZODIAC_HASS_ID + "_ph_current", device = device_info)
         s_ph_current_settings       = Settings(mqtt = self.mqtt_settings, entity = s_ph_current_info)
         self.s_ph_current           = Sensor(s_ph_current_settings)
 
-        s_acl_setpoint_info         = SensorInfo(name = "ACL setpoint", min = 600, max = 800, unique_id = self.ZODIAC_HASS_ID + "_acl_setpoint", device = device_info)
+        s_acl_setpoint_info         = SensorInfo(name = "ACL setpoint", min = 600, max = 800, state_class = "measurement", unique_id = self.ZODIAC_HASS_ID + "_acl_setpoint", device = device_info)
         s_acl_setpoint_settings     = Settings(mqtt = self.mqtt_settings, entity = s_acl_setpoint_info)
         self.acl_setpoint           = Sensor(s_acl_setpoint_settings)
 
-        s_acl_current_info          = SensorInfo(name = "Current ACL", min = 0, max = 1000, unique_id = self.ZODIAC_HASS_ID + "_acl_current", device = device_info)
+        s_acl_current_info          = SensorInfo(name = "Current ACL", min = 0, max = 1000, state_class = "measurement", unique_id = self.ZODIAC_HASS_ID + "_acl_current", device = device_info)
         s_acl_current_settings      = Settings(mqtt = self.mqtt_settings, entity = s_acl_current_info)
         self.s_acl_current          = Sensor(s_acl_current_settings)
 
