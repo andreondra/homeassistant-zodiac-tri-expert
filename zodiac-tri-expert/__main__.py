@@ -1,11 +1,12 @@
 import logging
 import sys
+import signal
 
 from .aqualink   import Aqualink
 from .hass       import ZodiacHomeAssistant
 from .exceptions import *
 
-_LOGGER = logging.getLogger(__name__)
+_LOGGER       = logging.getLogger(__name__)
 
 if __name__ == '__main__':
     logging.basicConfig(level=logging.DEBUG)
@@ -16,12 +17,22 @@ if __name__ == '__main__':
     except CantConnectToZodiac:
         print("Can't connect to the Zodiac!")
         sys.exit(1)
-    print("All set up!")
-    try:
-        ha.loop()
-    except KeyboardInterrupt:
+    except InterruptedError:
         print("Interrupted, exiting!")
         sys.exit(130)
     except FatalError:
         print("Fatal error, terminating!")
         sys.exit(1)
+
+    print("All set up!")
+
+    try:
+        ha.loop()
+    except InterruptedError:
+        print("Interrupted, exiting!")
+        sys.exit(130)
+    except FatalError:
+        print("Fatal error, terminating!")
+        sys.exit(1)
+
+    print("Exiting, bye!")

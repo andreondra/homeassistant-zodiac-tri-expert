@@ -6,6 +6,7 @@ import yaml
 from pathlib import Path
 import logging
 from time import sleep
+import signal
 
 from .constants  import *
 from .exceptions import *
@@ -17,16 +18,11 @@ class ZodiacHomeAssistant:
 
     ZODIAC_HASS_ID = "zodiac_tri_expert_chlorinator"
 
-    # To receive number updates from HA, define a callback function:
-    def power_callback(self, client: Client, message: MQTTMessage):
-        power = int(message.payload.decode())
-        self.current_output_power = power
-        _LOGGER.debug(f"Received output power = {power} % from HA.")
-        # Send an MQTT message to confirm to HA that the number was changed
-        self.n_output_power.set_value(power)
-
     def __init__(self, config_file_path : Path = "config.yaml"):
         
+        signal.signal(signal.SIGTERM, lambda s, f: self.sigterm_handler())
+        signal.signal(signal.SIGINT,  lambda s, f: self.sigterm_handler())
+
         ######################################################################
         # Load config file
         ######################################################################
@@ -173,6 +169,23 @@ class ZodiacHomeAssistant:
         self.n_output_power.set_value(self.current_output_power)
 
         _LOGGER.info(f"Setup done!")
+
+    # To receive number updates from HA, define a callback function:
+    def power_callback(self, client: Client, message: MQTTMessage):
+        power = int(message.payload.decode())
+        self.current_output_power = power
+        _LOGGER.debug(f"Received output power = {power} % from HA.")
+        # Send an MQTT message to confirm to HA that the number was changed
+        self.n_output_power.set_value(power)
+
+    def sigterm_handler(self):
+        _LOGGER.info("Terminating connection to HA...")
+        # Setting connection state to disconnected when shutting down the script.
+        try:
+            self.s_connection_state.off()
+        except AttributeError:
+            pass
+        raise InterruptedError()
 
     def loop(self):
 
