@@ -39,11 +39,9 @@ python3 -m zodiac-tri-expert
 ```
 
 You would probably want to autostart the script on system boot. Example systemd service is provided
-in the repository. Edit the unit, copy to the systemd config directory, enable and enjoy.
-
-Also, when using systemd, you need to install dependencies either globally or create virtual
-environment and install it there (the unit expects the virtual environment in the 
-directory `venv`).
+in the repository. Edit the unit, copy to the systemd config directory, enable and enjoy. Do not
+forget to create a virtual environment with dependencies installed. The provided unit expects
+the environment in the `venv` directory.
 
 ## Requirements & Dependencies
 Requires at least Python 3.11 and these packages (available from pip):
