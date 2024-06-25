@@ -49,6 +49,12 @@ class ZodiacHomeAssistant:
         except KeyError:
             _LOGGER.error("Error loading config file, serial port path is missing!")
             raise ConfigFileMalformed()
+        
+        try:
+            max_conn_attempts = config["zodiac"]["max_connection_attempts"]
+        except KeyError:
+            # Set to unlimited.
+            max_conn_attempts = 0
 
         ######################################################################
         # Connect to MQTT broker
@@ -79,9 +85,9 @@ class ZodiacHomeAssistant:
                 sleep(WAIT_BETWEEN_COMMANDS)
             except NoResponseException:
                 connection_attempts += 1
-                _LOGGER.warning(f"No response from Zodiac, attempt {connection_attempts}/{MAX_CONNECTION_ATTEMPTS}!")
+                _LOGGER.warning(f"No response from Zodiac, attempt {connection_attempts}/{max_conn_attempts if max_conn_attempts != 0 else "unlimited"}!")
 
-                if MAX_CONNECTION_ATTEMPTS != 0 and connection_attempts == MAX_CONNECTION_ATTEMPTS:
+                if max_conn_attempts != 0 and connection_attempts == max_conn_attempts:
                     _LOGGER.error(f"Can't connect to Zodiac after {connection_attempts} tries!")
                     raise CantConnectToZodiac()
                 else:
