@@ -183,7 +183,7 @@ class ZodiacHomeAssistant:
                 status = self.aqualink.set_output_get_info(self.current_output_power)
             except NoResponseException:
                 current_fails += 1
-                _LOGGER.warning("No response from Zodiac! Currently {current_fails} fails.")
+                _LOGGER.warning(f"No response from Zodiac! Currently {current_fails} fails.")
                 
                 if current_fails > CONN_DEAD_THRESH:
                     self.s_connection_state.off()
