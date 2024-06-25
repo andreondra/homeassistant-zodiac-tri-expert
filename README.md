@@ -1,6 +1,7 @@
 # Zodiac Tri Expert for Home Assistant
 This repository contains Python module for integrating Zodiac Tri Expert SWGs to the Home Assistant via MQTT.
-It supports reading pH and ACL (ORP) setpoint and current values as well as setting output power (or boost mode).
+It supports reading pH and ACL (ORP) setpoint and current values as well as setting output power (or boost mode by setting
+the output to 101).
 
 ## Connection to the Zodiac
 This script communicates with the Zodiac SWG via serial port. You can use either RS485, which is the official
